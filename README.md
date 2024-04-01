@@ -1,7 +1,7 @@
 # TRAVEL WHEELS
 
-Welcome to our Car Rental Management System repository! Our system offers a comprehensive solution designed to simplify the car rental process for both customers and administrators. 
-With a diverse fleet of vehicles including hatchbacks, SUVs, and sedans, customers have ample choices to suit their preferences.
+Welcome to our Travel Wheels! Our system offers a comprehensive solution designed to simplify the car rental process for both customers and administrators. 
+With a diverse fleet of vehicles, :car:  including hatchbacks, SUVs, and sedans, customers have ample choices to suit their preferences.
 The user-friendly interface allows customers to input their pickup and drop-off details effortlessly, ensuring a seamless booking experience. 
 
 ## Features
