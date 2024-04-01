@@ -27,12 +27,15 @@ The user-friendly interface allows customers to input their pickup and drop-off 
 
 ## Screenshots
   Home Page
+  
   ![image](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/f9fc2d4e-26f8-4bd1-b212-11be8e60b088)
 
   Customer Interface
+
   ![image](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/3cf508ad-7e67-412b-bcc9-6d4f05f11eb5)
 
   Admin Interface
+  
   ![image](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/3378c77e-208d-4abc-addd-f38e4a5a3003)
 
 
