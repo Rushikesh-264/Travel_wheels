@@ -1,0 +1,43 @@
+car1: MARUTI BREEZA
+car2: MARUTI SWIFT
+car3: HYUNDAI VIRTUS
+car4: SUZUKI CIAZ
+car5: TOYOTA INNOVA
+car6: MAHINDRA SCORPIO
+car7: FORCE TRAVELLER
+car8: TATA SAFARI
+car9: HYUNDAI CRETA
+car10: 0
+car11: 0
+car12: 0
+car13: 0
+car14: 0
+car15: 0
+car16: 0
+old_car@1: 0
+new_car@1: 0
+new_car_path1: 
+old_car@2: 0
+new_car@2: 0
+new_car_path2: 
+old_car@3: 0
+new_car@3: 0
+new_car_path3:
+old_car@4: 0
+new_car@4: 0
+new_car_path4: 
+old_car@5: 0
+new_car@5: 0
+new_car_path5: 
+old_car@6: 0
+new_car@6: 0
+new_car_path6: 
+old_car@7: 0
+new_car@7: 0
+new_car_path7: 
+old_car@8: 0
+new_car@8: 0
+new_car_path8: 
+old_car@9: 0
+new_car@9: 0
+new_car_path9: 
