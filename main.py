@@ -5,7 +5,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 from tkcalendar import Calendar
 from PIL import ImageTk, Image
-from datetime import datetime
+from datetime import datetime, timedelta
 from tkinter import StringVar
 from tkinter.ttk import Combobox
 import sqlite3
@@ -19,8 +19,10 @@ connect.execute('''Create table if not exists Cars_info (Car_id INT (100,1) PRIM
   Fuel_type VARCHAR (6),car_type VARCHAR(8),  vehicle_rent VARCHAR(9))''')
 
 # Table for storing Rented car details
-connect.execute('''CREATE TABLE if not exists Rented_cars (Car_id INT(4), Car_no VARCHAR(9), Car_name VARCHAR(15),
-    Customer_name VARCHAR(20), Customer_contact_number INT(10), Departure_date TIMESTAMP, Arrival_date TIMESTAMP)''')
+connect.execute('''CREATE TABLE if not exists  Rented_cars (Car_id INT(4), Car_no VARCHAR(9), Car_name VARCHAR(15), 
+    Customer_name VARCHAR(20), Customer_contact_number INT(10), Departure_date TIMESTAMP, Arrival_date TIMESTAMP,
+    Booking_date TIMESTAMP, Booking_time TIME , Car_rent INt(10))''')
+print("Table crated")
 
 # Table for storing rented car list
 connect.execute('''Create table if not exists Rented_car_list (Car_id INT(4), Car_no VARCHAR(9), Car_name VARCHAR(15),
@@ -28,8 +30,9 @@ connect.execute('''Create table if not exists Rented_car_list (Car_id INT(4), Ca
  car_type VARCHAR(8), vehicle_rent VARCHAR(9))''')
 
 # Table for storing Car history
-connect.execute('''CREATE TABLE if not exists Car_history (Car_id INT(3), Car_name VARCHAR(15), Customer_name VARCHAR(25),
-                 Departure_date TIMESTAMP, Arrival_date TIMESTAMP, Revenue_generated INT(8))''')
+connect.execute('''CREATE TABLE if not exists Car_history (Car_id INT(3), Car_name VARCHAR(15), Customer_name 
+VARCHAR(25), Departure_date TIMESTAMP, Arrival_date TIMESTAMP, Revenue_generated INT(8), Customer_contact_number INT(
+12))''')
 
 customer_frame = None
 admin_frame = None
@@ -50,6 +53,16 @@ car_data2_opened = 0
 old_car_values = []
 new_car_values = []
 new_car_path_values = []
+dates = []
+pickup_time = 0
+booking_date = datetime.now().strftime("%d-%m-%Y")
+booking_time = datetime.now().strftime("%H:%M:%S")
+current_date = datetime.now().strftime("%d-%m-%Y")
+booking_information_list = []
+car_rent = 0
+refund_amount = 0
+days_discount = False
+discount_valid = False
 
 
 def create_divided_page():  # Creating the main window
@@ -134,6 +147,7 @@ def create_divided_page():  # Creating the main window
             # Do something with the selected date, such as updating a label or variable
             print("Selected date:", formatted_date_str)
             order_details.append(formatted_date_str)
+            dates.append(selected_date)
 
             # Insert the selected date into the textbox
             date_entry.delete(0, END)  # Clear the existing content
@@ -237,21 +251,22 @@ def create_divided_page():  # Creating the main window
             pick_up_time_label = Label(customer_frame, text="Pick-up Time", font=("Helvetica", 12), fg="black")
             pick_up_time_label.place(x=1180, y=375)
 
-            def select_time():
-                time = time_var.get()
-                print("Selected time:", time)
-                order_details.append(time)
-
             def clear_time_selection():
                 time_var.set("")  # Clear the time selection
                 time_combobox.set("")  # Clear the combobox selection
+
+            def update_booking_time(event):
+                global pickup_time
+                pickup_time = time_var.get()
 
             time_var = StringVar()
             time_combobox = Combobox(customer_frame, textvariable=time_var,
                                      values=["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM",
                                              "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM",
                                              "9:00 PM", "10:00 PM"])
+
             time_combobox.place(x=1300, y=375)
+            time_combobox.bind("<<ComboboxSelected>>", update_booking_time)
 
             def on_select(event):
                 selected_location.set(location_combobox.get())
@@ -279,6 +294,337 @@ def create_divided_page():  # Creating the main window
             location_combobox.bind("<<ComboboxSelected>>", on_select)
             location_combobox.place(x=880, y=375)  # Adjust the coordinates as needed
 
+            def cancel_booking():
+                def confirm_cancellation(booking_frame):
+                    global refund_amount
+                    confirm = messagebox.askyesno("Cancellation Confirmation",
+                                                  "Are you sure you want to cancel this booking?")
+                    if confirm:
+                        def refund_back(frame1, frame2):
+                            def successfull(frame3, frame4, frame5):
+                                def delete():
+                                    print("booking = ", booking_information_list)
+                                    # Connect to the database
+                                    conn = sqlite3.connect("Car_Rental_Management_Database.db")
+                                    cursor = conn.cursor()
+                                    cursor.execute("DELETE FROM Rented_cars WHERE Car_name = ? AND Departure_date = ?",
+                                                   (booking_information_list[2], booking_information_list[5]))
+                                    cursor.execute("DELETE FROM Car_history WHERE Car_name = ? AND Departure_date = ?",
+                                                   (booking_information_list[2], booking_information_list[5]))
+                                    cursor.execute("DELETE FROM Rented_car_list WHERE Car_name = ?",
+                                                   (booking_information_list[2],))
+
+                                    # Commit changes and close connection
+                                    conn.commit()
+                                    conn.close()
+                                    print("Booking and history deleted successfully.")
+
+                                status = Frame(refund_frame, bg='white', width=440, height=550, highlightthickness=3,
+                                               borderwidth=3, highlightcolor='Black',
+                                               highlightbackground='black')
+                                status.place(x=600, y=25)
+
+                                image_path = "images/check.png"
+                                image = PhotoImage(file=image_path)
+
+                                # Create a Label to display the image
+                                image_label = Label(status, image=image, bg="white")
+                                image_label.image = image  # Keep a reference to the image object
+                                image_label.place(relx=0.5, rely=0.2, anchor="center")
+
+                                label1 = Label(status, text='Your refund request has been successfully processed.',
+                                               bg='white', fg='#068a3a', font=("yu gothic ui bold", 13, 'bold'))
+                                label1.place(x=10, y=230)
+                                label2 = Label(status, text='The amount will be credited back to your account',
+                                               bg='white', fg='#068a3a', font=("yu gothic ui bold", 13, 'bold'))
+                                label2.place(x=10, y=270)
+                                label4 = Label(status, text='                            within 48 hours',
+                                               bg='white', fg='#068a3a', font=("yu gothic ui bold", 13, 'bold'))
+                                label4.place(x=10, y=310)
+                                label3 = Label(status,
+                                               text='THANK YOU FOR YOUR PATIENCE',
+                                               bg='white', fg='blue', font=("yu gothic ui bold", 15, 'bold'))
+                                label3.place(x=50, y=358)
+
+                                home_button = Button(status, text="HOME", fg='white', bg='#063638', width=10,
+                                                     font=("yu gothic ui bold", 16), cursor='hand2',
+                                                     command=lambda: [status.destroy(), frame3.destroy(),
+                                                                      frame4.destroy(), frame5.destroy(), delete()])
+                                home_button.place(x=150, y=443)
+
+                            refund_frame = Frame(customer_frame, width=1600, height=600, background="#e4edf0")
+                            refund_frame.place(x=0, y=410)
+
+                            heading = Label(refund_frame, text="Refund Account Information",
+                                            font=("yu gothic ui bold", 21), bg='#e4edf0', fg='Red')
+                            heading.place(relx=0.5, y=23, anchor='center')
+
+                            account_name = Label(refund_frame, text="Account Holder Name:",
+                                                 font=("yu gothic ui bold", 17), bg='#e4edf0', fg='black')
+                            account_name.place(x=85, y=140)
+                            name_entry = Entry(refund_frame, width=30, fg="black",
+                                               font=("yu gothic ui semibold", 12), highlightthickness=3)
+                            name_entry.place(x=340, y=150)
+
+                            account_number = Label(refund_frame, text="Account Number:",
+                                                   font=("yu gothic ui bold", 17), bg='#e4edf0', fg='black')
+                            account_number.place(x=85, y=235)
+                            number_entry = Entry(refund_frame, width=30, fg="black",
+                                                 font=("yu gothic ui semibold", 12), highlightthickness=3)
+                            number_entry.place(x=340, y=240)
+
+                            bank_name = Label(refund_frame, text="Bank Name:",
+                                              font=("yu gothic ui bold", 17), bg='#e4edf0', fg='black')
+                            bank_name.place(x=85, y=330)
+                            name2_entry = Entry(refund_frame, width=30, fg="black",
+                                                font=("yu gothic ui semibold", 12), highlightthickness=3)
+                            name2_entry.place(x=340, y=335)
+
+                            branch_name = Label(refund_frame, text="Branch Name:",
+                                                font=("yu gothic ui bold", 17), bg='#e4edf0', fg='black')
+                            branch_name.place(x=880, y=140)
+                            name3_entry = Entry(refund_frame, width=30, fg="black",
+                                                font=("yu gothic ui semibold", 12), highlightthickness=3)
+                            name3_entry.place(x=1100, y=150)
+
+                            ifsc_name = Label(refund_frame, text="IFSC Code:",
+                                              font=("yu gothic ui bold", 17), bg='#e4edf0', fg='black')
+                            ifsc_name.place(x=880, y=235)
+                            codee_entry = Entry(refund_frame, width=30, fg="black",
+                                                font=("yu gothic ui semibold", 12), highlightthickness=3)
+                            codee_entry.place(x=1100, y=240)
+
+                            confirm_button = Button(refund_frame, text="Confirm", fg='Black', bg='#1b87d2',
+                                                    width=8, font=("yu gothic ui bold", 14),
+                                                    command=lambda: successfull(refund_frame, frame1, frame2))
+                            confirm_button.place(x=780, y=495)
+
+                        # Convert booking date and time to datetime objects
+                        booking_date_time = datetime.strptime(
+                            booking_information_list[7] + ' ' + booking_information_list[8],
+                            '%d-%m-%Y %H:%M:%S')
+
+                        # Calculate the difference between current time and booking time
+                        time_difference = datetime.now() - booking_date_time
+                        # Check if cancellation is within 24 hours
+                        if time_difference <= timedelta(hours=24):
+                            refund_amount = booking_information_list[9]
+                            percentage_refunded = 100
+                        else:
+                            car_rent = int(booking_information_list[9])  # Convert to int for calculation
+                            refund_amount = car_rent * 0.75  # 75% of car rent
+                            percentage_refunded = 75
+
+                        print(booking_information_list)
+                        new_frame = Frame(cancel_booking_frame, width=645, height=390, bg='white',
+                                          highlightthickness=1,
+                                          borderwidth=1, highlightcolor='Black', highlightbackground='black')
+                        new_frame.place(x=500, y=100)
+
+                        payment_label = Label(new_frame, text="Booking Cancellation Summary",
+                                              font=("yu gothic ui bold", 20),
+                                              bg='white', fg='Red')
+                        payment_label.place(x=140, y=3)
+                        solid_line_frame = Frame(new_frame, bg='black', height=4, width=680)
+                        solid_line_frame.place(x=0, y=60)
+
+                        rent_label = Label(new_frame, text="Rent Amount", font=("yu gothic ui bold", 17),
+                                           bg='white', fg='black')
+                        rent_label.place(x=20, y=100)
+                        rent_label1 = Label(new_frame, text=booking_information_list[9], font=("yu gothic ui bold", 17),
+                                            bg='white', fg='green')
+                        rent_label1.place(x=45, y=145)
+
+                        fine_label = Label(new_frame, text="Refund Amount", font=("yu gothic ui bold", 17),
+                                           bg='white', fg='black')
+                        fine_label.place(x=210, y=100)
+                        fine_label1 = Label(new_frame, text=str(refund_amount), font=("yu gothic ui bold", 17),
+                                            bg='white', fg='green')
+                        fine_label1.place(x=251, y=145)
+
+                        total_label = Label(new_frame, text="Percentage Refunded", font=("yu gothic ui bold", 17),
+                                            bg='white', fg='black')
+                        total_label.place(x=410, y=100)
+                        total_label = Label(new_frame, text=str(percentage_refunded) + "%",
+                                            font=("yu gothic ui bold", 17),
+                                            bg='white', fg='green')
+                        total_label.place(x=490, y=145)
+
+                        if time_difference > timedelta(hours=24):
+                            message = Label(new_frame, text="*Order is being cancelled after 24 hours so only 75% of"
+                                                            " total rent will be refunded*",
+                                            font=("yu gothic ui bold", 12), bg='Red', fg='black')
+                            message.place(x=22, y=260)
+                        else:
+                            message = Label(new_frame, text="*Order is being cancelled within 24 hours So 100% of"
+                                                            " total rent will be refunded*",
+                                            font=("yu gothic ui bold", 12), bg='white', fg='red')
+                            message.place(x=22, y=260)
+
+                        continue_button = Button(new_frame, text="Confirm", fg='white', bg='#1b87d2',
+                                                 width=7, font=("yu gothic ui bold", 15),
+                                                 command=lambda: refund_back(booking_frame, new_frame))
+                        continue_button.place(x=320, y=320)
+
+                        back_button = Button(new_frame, text="Back", fg='white', bg='#1b87d2',
+                                             width=7, font=("yu gothic ui bold", 15), command=new_frame.destroy)
+                        back_button.place(x=220, y=320)
+
+                def display_booking(booking_info):
+                    global current_date
+
+                    def update_clock():
+                        current_time = datetime.now().strftime("%H:%M:%S")
+                        clock_label.config(text=current_time)
+                        clock_label.after(1000, update_clock)
+
+                    car_name2 = Label(cancel_booking_frame, text=booking_info[2], bg='#e4edf0', fg='green',
+                                      font=("yu gothic ui bold", 17, 'bold'))
+                    car_name2.place(x=430, y=140)
+
+                    customer_name2 = Label(cancel_booking_frame, text=booking_info[3], bg='#e4edf0', fg='green',
+                                           font=("yu gothic ui bold", 17, 'bold'))
+                    customer_name2.place(x=430, y=220)
+
+                    booking_date2 = Label(cancel_booking_frame, text=booking_info[7], bg='#e4edf0', fg='green',
+                                          font=("yu gothic ui bold", 17, 'bold'))
+                    booking_date2.place(x=430, y=295)
+
+                    booking_time2 = Label(cancel_booking_frame, text=booking_info[8], bg='#e4edf0', fg='green',
+                                          font=("yu gothic ui bold", 17, 'bold'))
+                    booking_time2.place(x=430, y=365)
+
+                    car_rent2 = Label(cancel_booking_frame, text=booking_info[1], bg='#e4edf0', fg='green',
+                                      font=("yu gothic ui bold", 17, 'bold'))
+                    car_rent2.place(x=430, y=435)
+
+                    pickupdate2 = Label(cancel_booking_frame, text=booking_info[5], bg='#e4edf0', fg='green',
+                                        font=("yu gothic ui bold", 17, 'bold'))
+                    pickupdate2.place(x=1175, y=140)
+
+                    dropdate2 = Label(cancel_booking_frame, text=booking_info[6], bg='#e4edf0', fg='green',
+                                      font=("yu gothic ui bold", 17, 'bold'))
+                    dropdate2.place(x=1175, y=220)
+
+                    current_date2 = Label(cancel_booking_frame, text=current_date, bg='#e4edf0', fg='green',
+                                          font=("yu gothic ui bold", 17, 'bold'))
+                    current_date2.place(x=1175, y=290)
+
+                    current_time = datetime.now().strftime("%H:%M:%S")
+                    clock_label.config(text=current_time)
+                    cancel_booking_frame.after(1000, update_clock)
+
+                    update_clock()
+
+                def check_booking(mobile):
+                    global booking_information_list
+                    print("mobile =", mobile)
+                    con = sqlite3.connect("Car_Rental_Management_Database.db")
+                    cursor = con.cursor()
+                    cursor.execute("SELECT * FROM Rented_cars WHERE Customer_contact_number = ?", (mobile,))
+                    booking_information = cursor.fetchall()
+
+                    if booking_information:
+                        for row in booking_information:
+                            for value in row:
+                                booking_information_list.append(value)
+
+                        display_booking(booking_information_list)
+                        print("ss", booking_information_list)
+                    else:
+                        messagebox.showinfo("No Booking Found", "No booking found under this mobile number.")
+
+                cancel_booking_frame = Frame(customer_frame, width=1600, height=600, background="#e4edf0")
+                cancel_booking_frame.place(x=0, y=410)
+
+                emergency = Label(cancel_booking_frame, text='Enter Booking Contact Number : ', bg='#e4edf0',
+                                  fg='Black',
+                                  font=("yu gothic ui bold", 17, 'bold'))
+                emergency.place(x=430, y=50)
+                mobile_entry = Entry(cancel_booking_frame, width=30, fg="black", font=("yu gothic ui semibold", 12),
+                                     highlightthickness=3)
+                mobile_entry.place(x=810, y=53)
+
+                car_name1 = Label(cancel_booking_frame, text='Car Name : ', bg='#e4edf0', fg='Black',
+                                  font=("yu gothic ui bold", 17, 'bold'))
+                car_name1.place(x=80, y=140)
+
+                customer_name1 = Label(cancel_booking_frame, text='Customer Name : ', bg='#e4edf0', fg='Black',
+                                       font=("yu gothic ui bold", 17, 'bold'))
+                customer_name1.place(x=80, y=220)
+
+                booking_date1 = Label(cancel_booking_frame, text='Booking Date : ', bg='#e4edf0', fg='Black',
+                                      font=("yu gothic ui bold", 17, 'bold'))
+                booking_date1.place(x=80, y=295)
+
+                booking_time1 = Label(cancel_booking_frame, text='Booking Time : ', bg='#e4edf0', fg='Black',
+                                      font=("yu gothic ui bold", 17, 'bold'))
+                booking_time1.place(x=80, y=365)
+
+                car_rent1 = Label(cancel_booking_frame, text='Car Rent : ', bg='#e4edf0', fg='Black',
+                                  font=("yu gothic ui bold", 17, 'bold'))
+                car_rent1.place(x=80, y=435)
+
+                pickupdate1 = Label(cancel_booking_frame, text='Pick-Up Date : ', bg='#e4edf0', fg='Black',
+                                    font=("yu gothic ui bold", 17, 'bold'))
+                pickupdate1.place(x=880, y=140)
+
+                dropdate1 = Label(cancel_booking_frame, text='Drop-Off Date : ', bg='#e4edf0',
+                                  fg='Black',
+                                  font=("yu gothic ui bold", 17, 'bold'))
+                dropdate1.place(x=880, y=220)
+
+                current_date1 = Label(cancel_booking_frame, text='Current Date : ', bg='#e4edf0',
+                                      fg='Black',
+                                      font=("yu gothic ui bold", 17, 'bold'))
+                current_date1.place(x=880, y=290)
+
+                time = Label(cancel_booking_frame, text='Current Time : ', bg='#e4edf0', fg='Black',
+                             font=("yu gothic ui bold", 17, 'bold'))
+                time.place(x=880, y=365)
+
+                label = Label(cancel_booking_frame, text='BOOKING CANCELLATION', bg='#e4edf0', fg='Red',
+                              font=("yu gothic ui bold", 20, 'bold'))
+                label.place(relx=0.5, y=20, anchor='center')
+
+                back_button = Button(cancel_booking_frame, text="Back", fg='Black', bg='#1b87d2', width=8,
+                                     font=("yu gothic ui bold", 14), command=cancel_booking_frame.destroy)
+                back_button.place(x=660, y=495)
+
+                confirm_button = Button(cancel_booking_frame, text="Confirm", fg='Black', bg='#1b87d2', width=8,
+                                        font=("yu gothic ui bold", 14),
+                                        command=lambda: confirm_cancellation(cancel_booking_frame))
+                confirm_button.place(x=830, y=495)
+
+                search_button = Button(cancel_booking_frame, text="Search", fg='Black', bg='#1b87d2', width=6,
+                                       font=("yu gothic ui bold", 14),
+                                       command=lambda: check_booking(mobile_entry.get()))
+                search_button.place(x=1120, y=50)
+
+                clock_label = Label(cancel_booking_frame, font=('Arial', 18), background="#e4edf0", fg='green')
+                clock_label.place(x=1175, y=365)
+
+                emergency_contact_no = Label(cancel_booking_frame, text='Reason for Cancellation : ',
+                                             bg='#e4edf0',
+                                             fg='Black',
+                                             font=("yu gothic ui bold", 17, 'bold'))
+                emergency_contact_no.place(x=880, y=435)
+
+                # Create a Combobox with cancellation reasons
+                reasons = [
+                    "Change in travel plans",
+                    "Unexpected event",
+                    "Car not needed anymore",
+                    "Other"
+                ]
+
+                selected_reason = StringVar()
+                combobox = Combobox(cancel_booking_frame, textvariable=selected_reason, values=reasons,
+                                    state="readonly",
+                                    font=("Helvetica", 12), width=24)
+                combobox.bind("<<ComboboxSelected>>", on_select)
+                combobox.place(x=1180, y=441)
+
             def clear_and_show_main_window():
                 order_details.clear()
                 clear_location_selection()
@@ -286,10 +632,16 @@ def create_divided_page():  # Creating the main window
                 show_main_window("customer")
 
             back_button = Button(customer_frame, text="Back to Main", fg='Black', bg='#1b87d2',
-                                 font=("yu gothic ui bold", 16), command=lambda: clear_and_show_main_window(),
+                                 font=("yu gothic ui bold", 14), command=lambda: clear_and_show_main_window(),
                                  cursor='hand2')
             back_button.pack()
-            back_button.place(x=1300, y=50)
+            back_button.place(x=20, y=80)
+
+            cancel_booking_button = Button(customer_frame, fg='Black', bg='#1b87d2', font=("yu gothic ui bold", 12),
+                                           cursor='hand2', activebackground='#1b87d2', text="CANCEL BOOKING",
+                                           command=lambda: cancel_booking())
+            cancel_booking_button.pack()
+            cancel_booking_button.place(x=1380, y=90)
 
             new_frame = Frame(customer_frame, width=1600, height=600, background='#daebf0')
             new_frame.place(x=0, y=410)
@@ -373,6 +725,9 @@ def create_divided_page():  # Creating the main window
 
                     "TRAVEL WHEELS reserves the right to cancel reservations due to unforeseen circumstances or  "
                     "vehicle unavailability.",
+                    "If a booked car is canceled within 24 hours of the reservation, 100% of the amount will be "
+                    "refunded."
+                    "If a booked car is canceled after 24 hours of the reservation, 75% of the amount will be refunded."
 
                     "10. Agreement to Terms:",
                     "By signing the rental agreement or accepting the terms online, the renter acknowledges and  "
@@ -455,22 +810,24 @@ def create_divided_page():  # Creating the main window
                 def car_history(car_detail):
                     conn = sqlite3.connect("Car_Rental_Management_Database.db")
                     conn.execute('''INSERT INTO Car_history(Car_id, Car_name, Customer_name, Departure_date, 
-                    Arrival_date, Revenue_generated) values(''' + str(car_detail[0][0]) + ",'" + car_detail[0][2] +
-                                 "','" + order_details[9] + "','" + order_details[1] + "','" + order_details[2] + "'," +
-                                 order_details[7] + ''')''')
+                                    Arrival_date, Revenue_generated, Customer_contact_number) VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                                 (car_detail[0][0], car_detail[0][2], order_details[9], order_details[1],
+                                  order_details[2], order_details[7], int(order_details[8])))
+
                     # insert query to add history of the car to the Car_history table
                     conn.commit()
                     conn.close()
                     insert_rented_cars(car_detail)
-                    remove_rented_car(car_detail[0][2])
+                    # remove_rented_car(car_detail[0][2])
 
                 def insert_rented_cars(car_details1):
                     conn = sqlite3.connect("Car_Rental_Management_Database.db")
                     conn.execute('''INSERT INTO Rented_cars(Car_id, Car_no, Car_name, Customer_name, 
-                    Customer_contact_number, Departure_date, Arrival_date) VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                                 (car_details1[0][0], car_details1[0][1], car_details1[0][2], order_details[9],
-                                  order_details[8],
-                                  order_details[1], order_details[2]))
+                    Customer_contact_number, Departure_date, Arrival_date, Booking_date, Booking_time, 
+                    Car_rent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                                 (car_details1[0][0], car_details1[0][1], car_details1[0][2],
+                                  order_details[9], order_details[8], order_details[1], order_details[2],
+                                  str(booking_date), str(booking_time), car_rent))
 
                     # insert query to add history of the car to the Car_history table
                     conn.commit()
@@ -499,7 +856,7 @@ def create_divided_page():  # Creating the main window
                     order_details.clear()
                     clear_location_selection()
                     clear_time_selection()
-                    print(order_details)
+                    order_details.clear()
 
                 home_button = Button(payment_status, text="HOME", fg='white', bg='#063638', width=10,
                                      font=("yu gothic ui bold", 16), cursor='hand2', command=go_to_customer_frame)
@@ -883,9 +1240,65 @@ def create_divided_page():  # Creating the main window
                 print(order_details)
 
             def booking_info(customer_info_frame, car_info_frame):  # To diplay the booking details
+                global car_rent, discount_valid, discount_amount, days_discount
+
+                conn = sqlite3.connect("Car_Rental_Management_Database.db")
+                cursor = conn.cursor()
+
+                # SQL query to check if order_details[8] is present in car_history table
+                query = """SELECT COUNT(*) FROM Car_history WHERE Customer_contact_number = ?; """
+
+                # Execute the query with the value of order_details[8]
+                cursor.execute(query, (order_details[8],))
+
+                count = cursor.fetchone()[0]  # Fetch the count value
+                conn.close()
+                # Set discount_valid to True if the count is greater than 0
+                discount_valid = count == 0
+                days = int(order_details[3])
+                if days > 10:
+                    days_discount = True
+
+                print("ORDER DETAILS BEFORE DISCOUNT", order_details[7])
+
+                rent_value = int(order_details[7])
+                discount = 0
+                discount_message = ""
+
+                # Check if it's the 1st booking and rent days
+                if discount_valid and days_discount:
+                    discount = 0.30
+                    discount_message = "30% discount applied on your 1st booking for renting the car over 10 days."
+                elif discount_valid and not days_discount:
+                    discount = 0.20
+                    discount_message = "                      20% discount on your 1st booking."
+                elif not discount_valid and days_discount:
+                    discount = 0.13
+                    discount_message = "13% discount for booking car for more than 10 days."
+
                 booking_info_frame = Frame(customer_frame, width=1600, height=600, background="#e4edf0")
                 booking_info_frame.place(x=0, y=410)
-                print(order_details)
+
+                total_rent = Label(booking_info_frame, text='Total Rent : ', bg='#e4edf0', fg='Black',
+                                   font=("yu gothic ui bold", 17, 'bold'))
+                total_rent.place(x=880, y=365)
+
+                total_rent_value = "Rs " + str(round(rent_value * (1 - discount)))
+
+                total_rent_value_label = Label(booking_info_frame, width=30, fg="black",
+                                               font=("yu gothic ui semibold", 14),
+                                               highlightthickness=2, text=total_rent_value)
+                total_rent_value_label.place(x=1170, y=370)
+
+                # Display the discount message
+                if len(discount_message) > 10:
+                    discount_label = Label(booking_info_frame, text=discount_message, bg='#e4edf0', fg='Red',
+                                           font=("yu gothic ui", 13))
+                    discount_label.place(x=1095, y=432)
+                else:
+                    discount_label = Label(booking_info_frame, text=discount_message, bg='#e4edf0', fg='Red',
+                                           font=("yu gothic ui", 13))
+                    discount_label.place(x=1189, y=418)
 
                 pay_button = Button(booking_info_frame, text="PAY", fg='Black', bg='#1b87d2', width=8,
                                     font=("yu gothic ui bold", 16),
@@ -896,6 +1309,8 @@ def create_divided_page():  # Creating the main window
                 back_button = Button(booking_info_frame, text="BACK", fg='Black', bg='#1b87d2', width=8,
                                      font=("yu gothic ui bold", 16), command=booking_info_frame.destroy)
                 back_button.place(x=660, y=490)
+
+                order_details[7] = int(rent_value * (1 - discount))
 
                 label = Label(booking_info_frame, text='BOOKING DETAILS', bg='#e4edf0', fg='Red',
                               font=("yu gothic ui bold", 21, 'bold'))
@@ -948,6 +1363,7 @@ def create_divided_page():  # Creating the main window
                 customer_number = Label(booking_info_frame, text='Contact No. : ', bg='#e4edf0', fg='Black',
                                         font=("yu gothic ui bold", 17, 'bold'))
                 customer_number.place(x=880, y=140)
+
                 customer_number_detail = Label(booking_info_frame, width=30, fg="black",
                                                font=("yu gothic ui semibold", 14),
                                                highlightthickness=2, text=order_details[8])
@@ -968,13 +1384,7 @@ def create_divided_page():  # Creating the main window
                                                  highlightthickness=2, text=order_details[11])
                 emergency_contact_detail.place(x=1170, y=285)
 
-                total_rent = Label(booking_info_frame, text='Total Rent : ', bg='#e4edf0', fg='Black',
-                                   font=("yu gothic ui bold", 17, 'bold'))
-                total_rent.place(x=880, y=365)
-                total_rent = Label(booking_info_frame, width=30, fg="black",
-                                   font=("yu gothic ui semibold", 14),
-                                   highlightthickness=2, text="Rs " + order_details[7])
-                total_rent.place(x=1170, y=370)
+                car_rent = order_details[7]
 
             # to create a frame related to Specifc Car information and formal parameters are the details
             # of the car
@@ -986,15 +1396,25 @@ def create_divided_page():  # Creating the main window
                     cursor = conn.cursor()
                     print(car)
                     # Execute the SQL query to check if the car exists
-                    cursor.execute("SELECT * FROM Cars_info WHERE car_name = ?", (car,))
+                    cursor.execute("SELECT arrival_date FROM Rented_cars WHERE car_name = ?", (car,))
                     result = cursor.fetchone()
-                    print(result)
+
                     conn.close()  # Close the connection
 
-                    if result is None:
-                        messagebox.showinfo("Car Not Found", "Sorry, the car you want to rent isn't"
-                                                             " available. Please choose another option.")
-                        print("car not available")
+                    if result is not None:
+                        arrival_date = datetime.strptime(result[0], "%d-%m-%Y").date()
+                        if (dates[0] - arrival_date).days > 2:
+                            print("NEW PICKUP DATE =", dates[0])
+                            print("ARRIVAL DATE = ", arrival_date)
+                            customer_info(car_info_frame)
+                            order_details.append(car_name)
+                            order_details.append(rent_price)
+                        else:
+                            messagebox.showinfo("Car Not Available", "Sorry, the car you want to rent isn't available."
+                                                                     " Please choose another option.")
+                            print("NEW PICKUP DATE =", dates[0])
+                            print("ARRIVAL DATE = ", arrival_date)
+
                     else:
                         customer_info(car_info_frame)
                         order_details.append(car_name)
@@ -1082,7 +1502,8 @@ def create_divided_page():  # Creating the main window
                 book_button.place(x=1100, y=480)
 
                 back_button1 = Button(car_info_frame, fg='Black', text='Back', bg='#1b87d2', width=8,
-                                      font=("yu gothic ui bold", 16), cursor='hand2', command=car_info_frame.destroy)
+                                      font=("yu gothic ui bold", 16), cursor='hand2', command=lambda:
+                    [car_info_frame.destroy(), order_details.clear(), dates.clear()])
                 back_button1.place(x=960, y=480)
 
                 conn = sqlite3.connect('Car_Rental_Management_Database.db')
@@ -1096,39 +1517,39 @@ def create_divided_page():  # Creating the main window
 
             def breeza_info():
                 create_car_info_frame(customer_frame, "MARUTI BREEZA", "Hatchback", "4 Adults", "2 Bags", "AC",
-                                      "Automatic", "Diesel", "4499", "images/breeza.png", "images/car_symbol.png")
+                                      "Automatic", "Diesel", "2199", "images/breeza.png", "images/car_symbol.png")
 
             def swift_info():
                 create_car_info_frame(customer_frame, "MARUTI SWIFT", "Hatchback", "4 Adults", "2 Bags", "AC",
-                                      "Manual", "Diesel", "3999", "images/swift1.png", "images/car_symbol.png")
+                                      "Manual", "Diesel", "1999", "images/swift1.png", "images/car_symbol.png")
 
             def virtus_info():
                 create_car_info_frame(customer_frame, "HYUNDAI VIRTUS", "Sedan", "4 Adults", "2 Bags", "AC",
-                                      "Automatic", "Petrol", "6599", "images/virtus1.png", "images/car_symbol.png")
+                                      "Automatic", "Petrol", "3299", "images/virtus1.png", "images/car_symbol.png")
 
             def innova_info():
                 create_car_info_frame(customer_frame, "TOYOTA INNOVA", "SUV", "5 Adults", "3 Bags", "AC",
-                                      "Manual", "Diesel", "7499", "images/innova1.png", "images/car_symbol.png")
+                                      "Manual", "Diesel", "3899", "images/innova1.png", "images/car_symbol.png")
 
             def scorpio_info():
                 create_car_info_frame(customer_frame, "MAHINDRA SCORPIO", "SUV", "5 Adults", "4 Bags", "AC",
-                                      "Manual", "Diesel", "8499", "images/scorpio1.png", "images/car_symbol.png")
+                                      "Manual", "Diesel", "3199", "images/scorpio1.png", "images/car_symbol.png")
 
             def traveller_info():
                 create_car_info_frame(customer_frame, "FORCE TRAVELLER", "Mini Bus", "10 Adults", "6 Bags", "AC",
-                                      "Manual", "Diesel", "14999", "images/traveller1.png", "images/car_symbol.png")
+                                      "Manual", "Diesel", "4599", "images/traveller1.png", "images/car_symbol.png")
 
             def ciaz_info():
                 create_car_info_frame(customer_frame, "SUZUKI CIAZ", "Sedan", "4 Adults", "3 Bags", "AC",
-                                      "Automatic", "Petrol", "6999", "images/ciaz1.png", "images/car_symbol.png")
+                                      "Automatic", "Petrol", "2499", "images/ciaz1.png", "images/car_symbol.png")
 
             def safari_info():
                 create_car_info_frame(customer_frame, "TATA SAFARI", "SUV", "5 Adults", "4 Bags", "AC",
-                                      "Manual", "Diesel", "7999", "images/safari1.png", "images/car_symbol.png")
+                                      "Manual", "Diesel", "3799", "images/safari1.png", "images/car_symbol.png")
 
             def creta_info():
                 create_car_info_frame(customer_frame, "HYUNDAI CRETA", "SUV", "5 Adults", "2 Bags", "AC",
-                                      "Manual", "Diesel", "5499", "new_cars/creta.png", "images/car_symbol.png")
+                                      "Manual", "Diesel", "3499", "new_cars/creta.png", "images/car_symbol.png")
 
             def car_info(vehicle_name, image_path):
                 # Connect to the database
@@ -1346,8 +1767,8 @@ def create_divided_page():  # Creating the main window
                     car_button.place(x=1200, y=280, width=288, height=205)
 
                 close_button = Button(customer_frame, text="Close Window", fg='white', bg='Red',
-                                      font=("yu gothic ui bold", 16), cursor='hand2', command=close_window)
-                close_button.place(x=30, y=30)
+                                      font=("yu gothic ui bold", 14), cursor='hand2', command=close_window)
+                close_button.place(x=20, y=5)
 
                 def all_cars_2():
                     # Open the file
@@ -1849,7 +2270,8 @@ def create_divided_page():  # Creating the main window
                             return zero_count_line1_to_9, zero_count_line10_to_16
 
                         zero_count_line1_to_9, zero_count_line10_to_16 = count_zeros("car_data.txt")
-                        print("The value of 1st 0s and 2nd zeros are = ", zero_count_line1_to_9, zero_count_line10_to_16)
+                        print("The value of 1st 0s and 2nd zeros are = ", zero_count_line1_to_9,
+                              zero_count_line10_to_16)
 
                         if zero_count_line10_to_16 >= 1 and zero_count_line1_to_9 == False:
                             global new_image_path
@@ -2154,10 +2576,10 @@ def create_divided_page():  # Creating the main window
                     cur = connection.cursor()
                     cur.execute("SELECT * FROM Rented_cars")
                     all_cars_list = cur.fetchall()
-
+                    print(all_cars_list)
                     cars = []
-                    for a, b, c, d, e, f, g in all_cars_list:  # displays the list of all rented cars
-                        cars.append([a, b, c, d, e, f, g])
+                    for a, b, c, d, e, f, g, h, i, j in all_cars_list:  # displays the list of all rented cars
+                        cars.append([a, b, c, d, e, f, g, h, i, j])
 
                     label_characteristics = {
                         "font": ("Helvetica", 12),
@@ -2180,9 +2602,9 @@ def create_divided_page():  # Creating the main window
                         # Create labels dynamically for each characteristic
                         for j, label_info in enumerate(labels_info):
                             label = Label(rented_cars_frame, text=label_info["text"], **label_characteristics)
-                            label.place(x=label_info["x"], y=115 + i * 43)
+                            label.place(x=label_info["x"], y=100 + i * 43)
 
-                def rented_cars():  # function to see all the rented cars
+                def rented_cars_2():
                     # Connect to the database
                     conn = sqlite3.connect('Car_Rental_Management_Database.db')
                     cursor = conn.cursor()
@@ -2199,16 +2621,16 @@ def create_divided_page():  # Creating the main window
                     canvas = Canvas(rented_cars_frame, width=1600, height=650, background="#4e4f4f")
                     canvas.pack()
 
-                    canvas.create_line(70, 50, 1470, 50, width=2, fill="black")
-                    canvas.create_line(70, 95, 1470, 95, width=2, fill="black")
-                    canvas.create_line(70, 50, 70, 605, width=2, fill="black")
-                    canvas.create_line(190, 50, 190, 605, width=2, fill="black")
-                    canvas.create_line(395, 50, 395, 605, width=2, fill="black")
-                    canvas.create_line(595, 50, 595, 605, width=2, fill="black")
-                    canvas.create_line(815, 50, 815, 605, width=2, fill="black")
-                    canvas.create_line(1050, 50, 1050, 605, width=2, fill="black")
-                    canvas.create_line(1250, 50, 1250, 605, width=2, fill="black")
-                    canvas.create_line(1470, 50, 1470, 605, width=2, fill="black")
+                    canvas.create_line(70, 50, 1435, 50, width=2, fill="black")
+                    canvas.create_line(70, 92, 1435, 92, width=2, fill="black")
+                    canvas.create_line(70, 50, 70, 620, width=2, fill="black")
+                    canvas.create_line(190, 50, 190, 620, width=2, fill="black")
+                    canvas.create_line(395, 50, 395, 620, width=2, fill="black")
+                    canvas.create_line(595, 50, 595, 620, width=2, fill="black")
+                    canvas.create_line(815, 50, 815, 620, width=2, fill="black")
+                    canvas.create_line(1050, 50, 1050, 620, width=2, fill="black")
+                    canvas.create_line(1250, 50, 1250, 620, width=2, fill="black")
+                    canvas.create_line(1435, 50, 1435, 620, width=2, fill="black")
 
                     label1 = Label(canvas, text="RENTED CAR LIST", font=("Helvetica", 22, 'bold'),
                                    bg="#4e4f4f", fg='yellow')
@@ -2245,24 +2667,113 @@ def create_divided_page():  # Creating the main window
 
                     total_rented = Label(rented_cars_frame, text="TOTAL RENTED CARS:   " + str(total_rows),
                                          font=("Helvetica", 16, "bold"), bg="#4e4f4f", fg='yellow')
-                    total_rented.place(x=400, y=615)
+                    total_rented.place(x=500, y=625)
 
-                    canvas.create_line(70, 145, 1470, 145, width=2, fill="black")
-                    canvas.create_line(70, 195, 1470, 195, width=2, fill="black")
-                    canvas.create_line(70, 250, 1470, 250, width=2, fill="black")
-                    canvas.create_line(70, 305, 1470, 305, width=2, fill="black")
-                    canvas.create_line(70, 355, 1470, 355, width=2, fill="black")
-                    canvas.create_line(70, 405, 1470, 405, width=2, fill="black")
-                    canvas.create_line(70, 455, 1470, 455, width=2, fill="black")
-                    canvas.create_line(70, 505, 1470, 505, width=2, fill="black")
-                    canvas.create_line(70, 555, 1470, 555, width=2, fill="black")
-                    canvas.create_line(70, 605, 1470, 605, width=2, fill="black")
+                    back_button = Button(rented_cars_frame, text="Back", fg='white', bg='#1b87d2', width=5,
+                                         font=("yu gothic ui bold", 15), command=rented_cars_frame.destroy)
+                    back_button.place(x=1460, y=600)
+
+                    canvas.create_line(70, 125, 1435, 125, width=2, fill="black")
+                    canvas.create_line(70, 170, 1435, 170, width=2, fill="black")
+                    canvas.create_line(70, 215, 1435, 215, width=2, fill="black")
+                    canvas.create_line(70, 260, 1435, 260, width=2, fill="black")
+                    canvas.create_line(70, 305, 1435, 305, width=2, fill="black")
+                    canvas.create_line(70, 350, 1435, 350, width=2, fill="black")
+                    canvas.create_line(70, 395, 1435, 395, width=2, fill="black")
+                    canvas.create_line(70, 440, 1435, 440, width=2, fill="black")
+                    canvas.create_line(70, 485, 1435, 485, width=2, fill="black")
+                    canvas.create_line(70, 530, 1435, 530, width=2, fill="black")
+                    canvas.create_line(70, 575, 1435, 575, width=2, fill="black")
+                    canvas.create_line(70, 620, 1435, 620, width=2, fill="black")
+
+                def rented_cars_1():  # function to see all the rented cars upto 12 cars
+                    # Connect to the database
+                    conn = sqlite3.connect('Car_Rental_Management_Database.db')
+                    cursor = conn.cursor()
+                    # Execute the query to get the total number of rows
+                    cursor.execute("SELECT COUNT(*) FROM Rented_cars")
+                    total_rows = cursor.fetchone()[0]
+
+                    cursor.close()
+                    conn.close()
+
+                    rented_cars_frame = Frame(admin_main_dashframe, width=1600, height=700, background="yellow")
+                    rented_cars_frame.place(x=0, y=310)
+
+                    canvas = Canvas(rented_cars_frame, width=1600, height=650, background="#4e4f4f")
+                    canvas.pack()
+
+                    canvas.create_line(70, 50, 1435, 50, width=2, fill="black")
+                    canvas.create_line(70, 92, 1435, 92, width=2, fill="black")
+                    canvas.create_line(70, 50, 70, 620, width=2, fill="black")
+                    canvas.create_line(190, 50, 190, 620, width=2, fill="black")
+                    canvas.create_line(395, 50, 395, 620, width=2, fill="black")
+                    canvas.create_line(595, 50, 595, 620, width=2, fill="black")
+                    canvas.create_line(815, 50, 815, 620, width=2, fill="black")
+                    canvas.create_line(1050, 50, 1050, 620, width=2, fill="black")
+                    canvas.create_line(1250, 50, 1250, 620, width=2, fill="black")
+                    canvas.create_line(1435, 50, 1435, 620, width=2, fill="black")
+
+                    label1 = Label(canvas, text="RENTED CAR LIST", font=("Helvetica", 22, 'bold'),
+                                   bg="#4e4f4f", fg='yellow')
+                    label1.place(relx=0.5, rely=0.03, anchor="center")
+
+                    car_id_label = Label(rented_cars_frame, text="Car Id", font=("Helvetica", 15, 'bold'),
+                                         bg="#4e4f4f", fg='white')
+                    car_id_label.place(x=100, y=60)
+
+                    car_name_label = Label(rented_cars_frame, text="Car Number", font=("Helvetica", 15, 'bold'),
+                                           bg="#4e4f4f", fg='white')
+                    car_name_label.place(x=240, y=60)
+
+                    car_no_label = Label(rented_cars_frame, text="Car Name", font=("Helvetica", 15, 'bold'),
+                                         bg="#4e4f4f", fg='white')
+                    car_no_label.place(x=430, y=60)
+
+                    seats_label = Label(rented_cars_frame, text="Customer Name", font=("Helvetica", 15, 'bold'),
+                                        bg="#4e4f4f", fg='white')
+                    seats_label.place(x=620, y=60)
+
+                    luggage_label = Label(rented_cars_frame, text="Customer Contact No.", font=("Helvetica", 15,
+                                                                                                'bold'), bg="#4e4f4f",
+                                          fg='white')
+                    luggage_label.place(x=820, y=60)
+
+                    type_label = Label(rented_cars_frame, text="Pick-UP Date", font=("Helvetica", 15, 'bold'),
+                                       bg="#4e4f4f", fg='white')
+                    type_label.place(x=1080, y=60)
+
+                    type_label = Label(rented_cars_frame, text="Drop-Off Date", font=("Helvetica", 15, 'bold'),
+                                       bg="#4e4f4f", fg='white')
+                    type_label.place(x=1190 + 100, y=60)
+
+                    total_rented = Label(rented_cars_frame, text="TOTAL RENTED CARS:   " + str(total_rows),
+                                         font=("Helvetica", 16, "bold"), bg="#4e4f4f", fg='yellow')
+                    total_rented.place(x=500, y=625)
+
+                    next_button = Button(rented_cars_frame, text="Next", fg='white', bg='#1b87d2', width=5,
+                                         font=("yu gothic ui bold", 15), command=rented_cars_2)
+                    next_button.place(x=1460, y=600)
+
+                    canvas.create_line(70, 125, 1435, 125, width=2, fill="black")
+                    canvas.create_line(70, 170, 1435, 170, width=2, fill="black")
+                    canvas.create_line(70, 215, 1435, 215, width=2, fill="black")
+                    canvas.create_line(70, 260, 1435, 260, width=2, fill="black")
+                    canvas.create_line(70, 305, 1435, 305, width=2, fill="black")
+                    canvas.create_line(70, 350, 1435, 350, width=2, fill="black")
+                    canvas.create_line(70, 395, 1435, 395, width=2, fill="black")
+                    canvas.create_line(70, 440, 1435, 440, width=2, fill="black")
+                    canvas.create_line(70, 485, 1435, 485, width=2, fill="black")
+                    canvas.create_line(70, 530, 1435, 530, width=2, fill="black")
+                    canvas.create_line(70, 575, 1435, 575, width=2, fill="black")
+                    canvas.create_line(70, 620, 1435, 620, width=2, fill="black")
 
                     display_rented_cars(rented_cars_frame)
 
                 rented_car_image = PhotoImage(file="images/rented_cars.png")
                 rented_car_button = Button(admin_main_dashframe, image=rented_car_image, compound="top", bg="pink",
-                                           text="Rented Cars", font=("arial", 16), cursor='hand2', command=rented_cars)
+                                           text="Rented Cars", font=("arial", 16), cursor='hand2',
+                                           command=rented_cars_1)
                 rented_car_button.image = rented_car_image
                 rented_car_button.place(x=442, y=150, width=220, height=158)
 
@@ -2298,8 +2809,8 @@ def create_divided_page():  # Creating the main window
                         }
 
                         cars = []
-                        for a, b, c, d, e, f in history_info:  # displays the list of all rented cars
-                            cars.append([a, b, c, d, e, f])
+                        for a, b, c, d, e, f, g in history_info:  # displays the list of all rented cars
+                            cars.append([a, b, c, d, e, f, g])
 
                         # Create labels dynamically for each car
                         for i, car_info in enumerate(history_info):
@@ -2315,12 +2826,16 @@ def create_divided_page():  # Creating the main window
                             # Create labels dynamically for each characteristic
                             for j, label_info in enumerate(labels_info):
                                 label2 = Label(cars_history_frame, text=label_info["text"], **label_characteristics)
-                                label2.place(x=label_info["x"], y=145 + i * 46)
+                                label2.place(x=label_info["x"], y=135 + i * 46)
                                 dynamic_labels.append(label2)
 
                         clear_button = Button(cars_history_frame, text="Clear", fg='white', bg='#1b87d2', width=6,
                                               font=("yu gothic ui bold", 16), command=clear_labels)
-                        clear_button.place(x=1390, y=593)
+                        clear_button.place(x=1270, y=593)
+
+                        next_button = Button(cars_history_frame, text="Next", fg='white', bg='#1b87d2', width=6,
+                                             font=("yu gothic ui bold", 16), command=clear_labels)
+                        next_button.place(x=1400, y=593)
 
                         total_sum = 0
                         for row in history_info:
@@ -2501,15 +3016,8 @@ def create_divided_page():  # Creating the main window
                         print("Details of the car fetched from Rented_car_list = ", car_details)
                         cursor.close()
 
-                        conn = sqlite3.connect("Car_Rental_Management_Database.db")
-                        conn.execute('''INSERT INTO Cars_info(Car_id, Car_number, Car_name, Seats_capacity, 
-                                        luggage_capacity, transmission_type, fuel_type,car_type, vehicle_rent ) 
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                                     (car_details[0][0], car_details[0][1], car_details[0][2], car_details[0][3],
-                                      car_details[0][4], car_details[0][5], car_details[0][6], car_details[0][7],
-                                      car_details[0][8]))
-                        conn.commit()
-                        conn.close()
+                        car_details = list(car_details)
+                        print(car_details)
 
                         sleep(0.2)  # Sleep after committing the transaction
 
@@ -2517,13 +3025,13 @@ def create_divided_page():  # Creating the main window
                         query1 = """
                                 SELECT Revenue_generated, Customer_name
                                 FROM Car_history
-                                WHERE car_id = ? 
+                                WHERE Car_id = ? 
                                   AND Departure_Date = ?;
                                 """
                         cursor.execute(query1, (car_details[0][0], departure_date))
                         result = cursor.fetchone()
                         print("RESULT = ", result)
-                        print("Departure date when query is being run", departure_date)
+                        print("Departure date when query is being run", car_details[0][0])
 
                         query = """
                                 UPDATE Car_history
@@ -2766,10 +3274,8 @@ def create_divided_page():  # Creating the main window
                 def display_car_details1(available_cars_frame):
                     connection = sqlite3.connect("Car_Rental_Management_Database.db")
                     cur = connection.cursor()
-                    cur.execute("SELECT * FROM Cars_info LIMIT 12")
+                    cur.execute("SELECT * FROM Cars_info")
                     all_cars_list = cur.fetchall()
-                    cur.execute("SELECT * FROM Rented_car_list")
-                    rented_list = cur.fetchall()
 
                     label_characteristics = {
                         "font": ("Helvetica", 12),
@@ -2777,23 +3283,42 @@ def create_divided_page():  # Creating the main window
                         "fg": "white"
                     }
 
-                    # Create labels dynamically for each available car
+                    # Create a dictionary to store rented status for each car
+                    rented_status = {}
+                    for car_info in all_cars_list:
+                        rented_status[car_info[0]] = "Available"  # Initialize all cars as available
+
+                    # Update rented status for each rented car
+                    cur.execute("SELECT * FROM Rented_cars")
+                    rented_list = cur.fetchall()
+                    for rented_car_info in rented_list:
+                        car_name = rented_car_info[0]  # Assuming Car_name is at index 2
+                        departure_date = rented_car_info[5]  # Assuming Departure_date is at index 5
+                        arrival_date = rented_car_info[6]  # Assuming Arrival_date is at index 6
+                        if departure_date <= current_date <= arrival_date:
+                            rented_status[car_name] = "Rented"
+                    print(rented_status)
+                    available_count = sum(1 for status in rented_status.values() if status == "Available")
+                    rented_count = sum(1 for status in rented_status.values() if status == "Rented")
+
+                    # Create labels dynamically for each car
                     for i, car_info in enumerate(all_cars_list):
+                        status = rented_status.get(car_info[0], "Available")  # Default status is "Available"
                         labels_info = [
                             {"text": car_info[0], "x": 30},
                             {"text": car_info[1], "x": 155},
                             {"text": car_info[2], "x": 340},
                             {"text": car_info[3], "x": 570},
                             {"text": car_info[4], "x": 790},
-                            {"text": car_info[7], "x": 990},
-                            {"text": car_info[8], "x": 1175},
-                            {"text": "Available", "x": 1350, "color": "#03fc45"}
+                            {"text": car_info[5], "x": 990},
+                            {"text": "Rs " + str(car_info[8]), "x": 1175},
+                            {"text": status, "x": 1350, "color": "#03fc45" if status == "Available" else "red"}
                         ]
 
-                        # Create labels dynamically for each characteristic of available cars
+                        # Create labels dynamically for each characteristic of cars
                         for j, label_info in enumerate(labels_info):
                             label_characteristics_local = label_characteristics.copy()
-                            if "color" in label_info and label_info["text"] == "Available":
+                            if "color" in label_info and label_info["text"] == status:
                                 label_characteristics_local["fg"] = label_info["color"]
                             label = Label(available_cars_frame, text=label_info["text"], **label_characteristics_local)
                             label.place(x=label_info["x"], y=108 + i * 40)
@@ -2801,37 +3326,15 @@ def create_divided_page():  # Creating the main window
                     # Calculate the starting y position for rented cars labels
                     rented_start_y = 108 + len(all_cars_list) * 40  # Add some extra space for separation
 
-                    # Create labels dynamically for each rented car
-                    for i, rented_car_info in enumerate(rented_list):
-                        rented_labels_info = [
-                            {"text": rented_car_info[0], "x": 30},
-                            {"text": rented_car_info[1], "x": 155},
-                            {"text": rented_car_info[2], "x": 340},
-                            {"text": rented_car_info[3], "x": 570},
-                            {"text": rented_car_info[4], "x": 790},
-                            {"text": rented_car_info[7], "x": 990},
-                            {"text": rented_car_info[8], "x": 1175},
-                            {"text": "Rented", "x": 1350, "color": "#f24441"}
-                        ]
-
-                        # Create labels dynamically for each characteristic of rented cars
-                        for j, rented_label_info in enumerate(rented_labels_info):
-                            label_characteristics_local = label_characteristics.copy()
-                            if "color" in rented_label_info and rented_label_info["text"] == "Rented":
-                                label_characteristics_local["fg"] = rented_label_info["color"]
-                            label = Label(available_cars_frame, text=rented_label_info["text"],
-                                          **label_characteristics_local)
-                            label.place(x=rented_label_info["x"], y=rented_start_y + i * 40)
-
-                    total_cars = Label(available_cars_frame, text="Total Cars: " + str(len(all_cars_list) + len
-                    (rented_list)), font=("Helvetica", 17, 'bold'), bg="#4e4f4f", fg='yellow')
+                    total_cars = Label(available_cars_frame, text="Total Cars: " + str(len(all_cars_list)),
+                                       font=("Helvetica", 17, 'bold'), bg="#4e4f4f", fg='yellow')
                     total_cars.place(x=30, y=600)
 
-                    current_cars = Label(available_cars_frame, text="Available Cars: " + str(len(all_cars_list)),
+                    current_cars = Label(available_cars_frame, text="Available Cars: " + str(available_count),
                                          font=("Helvetica", 17, 'bold'), bg="#4e4f4f", fg='yellow')
                     current_cars.place(x=370, y=600)
 
-                    rent_cars = Label(available_cars_frame, text="Rented Cars: " + str(len(rented_list)),
+                    rent_cars = Label(available_cars_frame, text="Rented Cars: " + str(rented_count),
                                       font=("Helvetica", 17, 'bold'), bg="#4e4f4f", fg='yellow')
                     rent_cars.place(x=770, y=600)
 
@@ -3202,7 +3705,7 @@ def create_divided_page():  # Creating the main window
                                  , activebackground='#d65af2', text="BACK TO MAIN",
                                  command=lambda: show_main_window("admin"))
             back_button.pack()
-            back_button.place(x=169, y=490, width=180, height=40)
+            back_button.place(x=142, y=490, width=180, height=40)
 
             # Hide other frames
             if frame1 is not None:
