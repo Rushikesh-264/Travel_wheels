@@ -27,17 +27,17 @@ The user-friendly interface allows customers to input their pickup and drop-off 
 
 ## Screenshots
  
-  Home Page
+  HOME PAGE
   
   ![Screenshot 2024-03-16 191748](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/809821ce-1d9e-404c-9533-1dfc35c16f44)
 
 
-  Customer Interface
+  CUSTOMER INTERFACE
 
   ![Screenshot 2024-03-16 191809](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/116527c4-7b80-4426-aad0-8df00c2933a2)
 
 
-  Admin Interface
+  ADMIN INTERFACE
   
   ![Screenshot 2024-03-16 192441](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/4b41480d-661f-4f24-94fd-a04f1d308b76)
 
@@ -69,7 +69,7 @@ The user-friendly interface allows customers to input their pickup and drop-off 
 
   Booking Cancellation
 
-  ![Screenshot 2024-03-16 192441](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/5a6d92c8-affc-49f0-8e93-6f637582a4f0)
+  
 
 
   Add New Car
