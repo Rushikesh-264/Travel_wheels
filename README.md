@@ -27,19 +27,22 @@ The user-friendly interface allows customers to input their pickup and drop-off 
 
 ## Screenshots
  
-  HOME PAGE
+  Home Page
   
   ![Screenshot 2024-03-16 191748](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/809821ce-1d9e-404c-9533-1dfc35c16f44)
 
 
-  CUSTOMER INTERFACE
+
+  Customer Interface
 
   ![Screenshot 2024-03-16 191809](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/116527c4-7b80-4426-aad0-8df00c2933a2)
 
 
-  ADMIN INTERFACE
+
+  Admin Interface
   
   ![Screenshot 2024-03-16 192441](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/4b41480d-661f-4f24-94fd-a04f1d308b76)
+
 
 
   Car Details
@@ -47,9 +50,13 @@ The user-friendly interface allows customers to input their pickup and drop-off 
   ![Screenshot 2024-03-16 191831](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/e43d15a7-3ca2-48b8-b6bd-c442f7fe3d36)
 
 
+
+
   Customer Details
   
   ![Screenshot 2024-03-16 191947](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/6b40c100-c653-467f-b5f2-5fecc9a33f53)
+
+
 
 
   Booking Details
@@ -57,9 +64,13 @@ The user-friendly interface allows customers to input their pickup and drop-off 
   ![Screenshot 2024-03-16 191957](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/588b2bdc-54ce-42ac-8810-d8b925aabda0)
 
 
+
+
   Payment Options
   
   ![Screenshot 2024-03-16 192201](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/02b89da3-565c-453d-810f-483f5f8c3991)
+
+
 
 
   Visa Payment
@@ -67,9 +78,13 @@ The user-friendly interface allows customers to input their pickup and drop-off 
   ![Screenshot 2024-03-16 200758](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/0b7d9df3-72af-4471-a05c-e9508a8aa139)
   
 
+
+
   Booking Cancellation
 
-  
+  ![Screenshot 2024-04-21 173509](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/7632e4f6-359c-4d48-8a82-7dce6a78e167)
+
+
 
 
   Add New Car
@@ -77,9 +92,13 @@ The user-friendly interface allows customers to input their pickup and drop-off 
   ![Screenshot 2024-03-16 192952](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/d6327c9c-88d5-4b45-958f-e79200f68331)
 
 
+
+
   Remove Existing Car
   
   ![Screenshot 2024-03-16 192719](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/cd2f2000-cced-49f6-9eed-e70e66a8cd74)
+
+
 
 
   Recive Back Car
@@ -87,9 +106,13 @@ The user-friendly interface allows customers to input their pickup and drop-off 
   ![Uploading Screenshot 2024-03-16 192751.png…]()
 
 
+
+
   Rented Car List
 
   ![Screenshot 2024-03-16 195255](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/3bae0bc6-0e56-4f4c-aa70-a41f94dd5e61)
+
+
 
 
   Car History
