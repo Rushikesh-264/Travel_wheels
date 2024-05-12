@@ -38,7 +38,22 @@ The user-friendly interface allows customers to input their pickup and drop-off 
   
   ![image](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/3378c77e-208d-4abc-addd-f38e4a5a3003)
 
+  Car Details
+  ![Screenshot 2024-03-16 191831](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/e43d15a7-3ca2-48b8-b6bd-c442f7fe3d36)
+
+  Customer Details
+  ![Screenshot 2024-03-16 191947](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/6b40c100-c653-467f-b5f2-5fecc9a33f53)
+
+  Booking Details
+  ![Screenshot 2024-03-16 191957](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/588b2bdc-54ce-42ac-8810-d8b925aabda0)
+
+  Payment Options
+  ![Screenshot 2024-03-16 192201](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/02b89da3-565c-453d-810f-483f5f8c3991)
+
+  Visa Payment
+  ![Screenshot 2024-03-16 200758](https://github.com/Rushikesh-264/Travel_wheels/assets/150276077/0b7d9df3-72af-4471-a05c-e9508a8aa139)
+
 
 ## Contributing
 
-We welcome contributions from the community! If you have ideas for new features, enhancements, or bug fixes, please submit a pull request. For major changes, please open an issue first to discuss the proposed changes.
+I welcome contributions from the community! If you have ideas for new features, enhancements, or bug fixes, please submit a pull request. For major changes, please open an issue first to discuss the proposed changes.
